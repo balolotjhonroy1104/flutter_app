@@ -1,35 +1,44 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
-class KConstants{
+
+class KConstants {
   static const String themeModeKey = 'themeModeKey';
   static const String loggedInUsernameKey = 'loggedInUsername';
 
-  /// Username of the currently logged in user, set on login.
-  /// Kept in memory for the session and persisted in SharedPreferences.
+  /// Username of the currently logged in user.
   static String? loggedInUsername;
 
- 
-  ///  C:\xampp\htdocs\api\login.php
+  /// Online PHP API folder.
   static const String apiFolderName = 'api';
 
+  /// Base URL of the online PHP server.
+  static const String apiBaseUrl = 'https://janry.infinityfreeapp.com';
 
-  static String get apiBaseUrl {
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://192.168.1.149';
-    }
-    return 'http://localhost';
-  }
+  /// PHP API endpoints.
+  static String get loginUrl =>
+      '$apiBaseUrl/api/login.php';
 
-  static String get loginUrl => 'http://192.168.1.149/api/login.php';
-  static String get registerUrl => 'http://192.168.1.149/api/register.php';
-  static String get profileUrl => 'http://192.168.1.149/api/profile.php';
-  static String get changePasswordUrl => 'http://192.168.1.149/api/change_password.php';
-  static String get attendanceUrl => 'http://192.168.1.149/api/attendance.php';
-  static const String biometricUrl =
-    'http://192.168.1.149/api/enable_biometric.php';
+  static String get registerUrl =>
+      '$apiBaseUrl/api/register.php';
 
-  /// Base URL used to resolve relative picture paths (e.g. 'uploads/pic_x.jpg')
-  /// returned by the API into full image URLs.
-  static String get apiBaseUrlForUploads => 'http://192.168.1.149/api/';
+  static String get profileUrl =>
+      '$apiBaseUrl/api/profile.php';
+
+  static String get changePasswordUrl =>
+      '$apiBaseUrl/api/change_password.php';
+
+  static String get attendanceUrl =>
+      '$apiBaseUrl/api/attendance.php';
+
+  static String get biometricUrl =>
+      '$apiBaseUrl/api/enable_biometric.php';
+
+  /// Used for profile-picture URLs.
+  ///
+  /// Example returned by PHP:
+  /// uploads/pic_123.jpg
+  ///
+  /// Becomes:
+  /// https://yourapp.infinityfreeapp.com/api/uploads/pic_123.jpg
+  static String get apiBaseUrlForUploads =>
+      '$apiBaseUrl/api/';
 }

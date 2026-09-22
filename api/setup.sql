@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Sep 18, 2026 at 09:42 AM
+-- Generation Time: Sep 22, 2026 at 02:24 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,7 +20,9 @@ SET time_zone = "+00:00";
 --
 -- Database: `app_db`
 --
+
 -- --------------------------------------------------------
+
 --
 -- Table structure for table `attendance`
 --
@@ -53,7 +55,11 @@ CREATE TABLE `auth_tokens` (
 
 INSERT INTO `auth_tokens` (`id`, `user_id`, `token`) VALUES
 (1, 2, 0),
-(2, 3, 0);
+(2, 3, 0),
+(3, 4, 919000),
+(4, 5, 0),
+(5, 5, 0),
+(6, 5, 7992);
 
 -- --------------------------------------------------------
 
@@ -79,7 +85,9 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `full_name`, `email`, `profile_picture`, `username`, `password`, `biometric_enabled`, `created_at`) VALUES
 (1, 'Jhon Roy Cosas Balolot', 'balolotjhonroy1104@gmail.com', 'uploads/pic_6aaccd3e7cba00.79281705.jpg', 'admin123', 'admin123', 0, '2026-09-18 05:33:50'),
 (2, 'Earl Jave Propongo', 'earl@gmail.com', 'uploads/pic_6aace3c6dd4e17.20756693.jpg', 'earl123', 'earl123', 0, '2026-09-18 07:09:58'),
-(3, 'yuw', 'janroy1104@gmail.com', 'uploads/pic_6aace43a500568.62142628.jpg', 'gian123', 'gian123', 0, '2026-09-18 07:11:54');
+(3, 'yuw', 'janroy1104@gmail.com', 'uploads/pic_6aace43a500568.62142628.jpg', 'gian123', 'gian123', 0, '2026-09-18 07:11:54'),
+(4, 'kvo', 'nk@gmail.com', 'uploads/pic_6aacedc2277305.05132197.jpg', 'enzu123', 'enzu123', 0, '2026-09-18 07:52:34'),
+(5, 'gaa', 'ga@gmail.com', 'uploads/pic_6aacf3d1e6fb85.67159045.jpg', 'user123', 'user123', 1, '2026-09-18 08:18:25');
 
 --
 -- Indexes for dumped tables
@@ -119,13 +127,13 @@ ALTER TABLE `attendance`
 -- AUTO_INCREMENT for table `auth_tokens`
 --
 ALTER TABLE `auth_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

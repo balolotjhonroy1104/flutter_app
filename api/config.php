@@ -1,10 +1,10 @@
 <?php
-// Database configuration for XAMPP (default credentials).
+// Database configuration for InfinityFree MySQL.
 // Change these if your MySQL setup differs.
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'app_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'sql105.infinityfree.me');
+define('DB_NAME', 'if0_42976992_app_db');
+define('DB_USER', 'if0_42976992');
+define('DB_PASS', 'YOUR_DATABASE_PASSWORD');
 
 function db_connect() {
     try {
