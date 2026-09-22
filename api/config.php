@@ -7,7 +7,7 @@ define('DB_USER', 'if0_42976992');
 define('DB_PASS', 'YOUR_DATABASE_PASSWORD');
 
 function db_connect() {
-    try {
+    try {git commit -m "Update API URLs for online server"
         $conn = new mysqli (
             DB_HOST,DB_USER,DB_PASS,DB_NAME
         );
