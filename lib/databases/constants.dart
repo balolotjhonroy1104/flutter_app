@@ -11,7 +11,7 @@ class KConstants {
   static const String apiFolderName = 'api';
 
   /// Base URL of the online PHP server.
-  static const String apiBaseUrl = 'https://janry.infinityfreeapp.com';
+  static const String apiBaseUrl = 'https://janry-app.infinityfreeapp.com';
 
   /// PHP API endpoints.
   static String get loginUrl =>
@@ -38,7 +38,7 @@ class KConstants {
   /// uploads/pic_123.jpg
   ///
   /// Becomes:
-  /// https://yourapp.infinityfreeapp.com/api/uploads/pic_123.jpg
+ /// https://yourapp.infinityfree.me/api/uploads/pic_123.jpg
   static String get apiBaseUrlForUploads =>
       '$apiBaseUrl/api/';
 }

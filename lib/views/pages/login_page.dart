@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:app/databases/constants.dart';
+import 'package:app/functions/api_client.dart';
 import 'package:app/functions/biometric_enabler.dart';
 import 'package:app/functions/biometric_function.dart';
 import 'package:app/views/pages/home_page.dart';
 import 'package:app/views/pages/sign_up_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
@@ -355,7 +355,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
+      final response = await ApiClient.post(
         Uri.parse(KConstants.loginUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -366,7 +366,7 @@ class _LoginPageState extends State<LoginPage> {
       print('STATUS CODE: ${response.statusCode}');
       print('RESPONSE BODY: ${response.body}');
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = ApiClient.decodeJson(response);
 
       if (data['success'] == true) {
         // Remember the logged in user for the profile page.

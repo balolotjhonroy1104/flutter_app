@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:app/databases/constants.dart';
+import 'package:app/functions/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -63,7 +64,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     try {
-      final response = await http
+      final response = await ApiClient
           .post(
             Uri.parse(KConstants.profileUrl),
             headers: {'Content-Type': 'application/json'},
@@ -74,7 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
       print('Profile Status code: ${response.statusCode}');
       print('Profile Response body: ${response.body}');
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = ApiClient.decodeJson(response);
       if (!mounted) return;
       if (data['success'] == true) {
         setState(() {
@@ -131,12 +132,13 @@ class _ProfilePageState extends State<ProfilePage> {
         ));
 
       final streamed =
-          await request.send().timeout(const Duration(seconds: 30));
-      final response = await http.Response.fromStream(streamed);
+          await ApiClient.sendMultipart(request)
+              .timeout(const Duration(seconds: 30));
+      final response = streamed;
       print('Profile picture Status code: ${response.statusCode}');
       print('Profile picture Response body: ${response.body}');
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = ApiClient.decodeJson(response);
       if (!mounted) return;
       if (data['success'] == true) {
         setState(() {
@@ -413,7 +415,7 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http
+      final response = await ApiClient
           .post(
             Uri.parse(KConstants.changePasswordUrl),
             headers: {'Content-Type': 'application/json'},
@@ -429,7 +431,7 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
       print('Change password Status code: ${response.statusCode}');
       print('Change password Response body: ${response.body}');
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = ApiClient.decodeJson(response);
       if (!mounted) return;
       if (data['success'] == true) {
         Navigator.pop(context, true);

@@ -8,7 +8,7 @@ import 'package:app/views/widget/punch_sheet_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
+import 'package:app/functions/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TimePage extends StatefulWidget {
@@ -68,7 +68,7 @@ class _TimePageState extends State<TimePage> {
     }
 
     try {
-      final response = await http
+      final response = await ApiClient
           .post(
             Uri.parse(KConstants.attendanceUrl),
             headers: {'Content-Type': 'application/json'},
@@ -124,7 +124,7 @@ class _TimePageState extends State<TimePage> {
     final Position? position = await _getCurrentLocation();
 
     try {
-      final response = await http
+      final response = await ApiClient
           .post(
             Uri.parse(KConstants.attendanceUrl),
             headers: {'Content-Type': 'application/json'},

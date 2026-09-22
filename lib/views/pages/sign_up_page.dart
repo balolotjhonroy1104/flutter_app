@@ -4,6 +4,8 @@ import 'package:app/views/pages/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lottie/lottie.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class SignUpPage extends StatefulWidget {
 
@@ -83,6 +85,32 @@ class _SignUpPageState extends State<SignUpPage> {
       _signUpFunctions.profilePicture = picked;
     }
   }
+ @override
+ void initState() {
+   super.initState();
+   testHttpsConnection();
+ }
+ Future<void> testHttpsConnection() async {
+  try {
+    final client = HttpClient();
+
+    final request = await client.getUrl(
+      Uri.parse('https://janry.infinityfree.me'),
+    );
+
+    final response = await request.close();
+
+    debugPrint('HTTPS STATUS: ${response.statusCode}');
+    debugPrint('HTTPS CONNECTION SUCCESS');
+
+    client.close();
+  } catch (e, stackTrace) {
+    debugPrint('HTTPS TEST ERROR: $e');
+    debugPrint(stackTrace.toString());
+  }
+}
+ 
+
   @override
   Widget build(BuildContext context) {
     double widthScreen = MediaQuery.of(context).size.width;

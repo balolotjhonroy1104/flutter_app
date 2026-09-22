@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:app/databases/constants.dart';
+import 'package:app/functions/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -155,7 +156,7 @@ class BiometricFunctions {
     // Tell the server (best effort - the local toggle below is what
     // decides whether the button offers login or setup).
     try {
-      await http.post(
+      await ApiClient.post(
         Uri.parse(KConstants.biometricUrl),
         headers: {
           'Content-type': 'application/json',
@@ -243,7 +244,7 @@ class BiometricFunctions {
         return;
       }
 
-      final data = jsonDecode(response.body);
+      final data = ApiClient.decodeJson(response);
       if (data['success'] == true) {
         onMessage("Biometric login enabled successfully");
       } else {

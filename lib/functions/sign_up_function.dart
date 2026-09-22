@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:app/databases/constants.dart';
+import 'package:app/functions/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -130,8 +131,7 @@ class SignUpFunctions {
       // DECODE JSON
       // -----------------------------
 
-      final data =
-          jsonDecode(response.body) as Map<String, dynamic>;
+      final data = ApiClient.decodeJson(response);
 
       // -----------------------------
       // REGISTRATION SUCCESS
@@ -207,7 +207,7 @@ class SignUpFunctions {
     String password,
     String confirm,
   ) async {
-    return http
+    return ApiClient
         .post(
           Uri.parse(KConstants.registerUrl),
           headers: {
@@ -253,12 +253,8 @@ class SignUpFunctions {
         ),
       );
 
-    final streamed = await request
-        .send()
-        .timeout(
-          const Duration(seconds: 30),
-        );
-
-    return http.Response.fromStream(streamed);
+    return ApiClient.sendMultipart(request).timeout(
+      const Duration(seconds: 30),
+    );
   }
 }
