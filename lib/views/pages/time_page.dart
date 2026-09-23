@@ -2,8 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app/databases/constants.dart';
-import 'package:app/databases/style.dart';
-import 'package:app/views/widget/attendance_record_tile.dart';
+import 'package:app/views/widget/attendance_history_sheet.dart';
 import 'package:app/views/widget/punch_sheet_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -18,7 +17,7 @@ class TimePage extends StatefulWidget {
   State<TimePage> createState() => _TimePageState();
 }
 
-class _TimePageState extends State<TimePage> {
+class _TimePageState extends State<TimePage> with WidgetsBindingObserver {
   String username = '';
 
   bool _isLoading = true;
@@ -41,6 +40,9 @@ class _TimePageState extends State<TimePage> {
   @override
   void initState() {
     super.initState();
+    // Refresh when the app comes back to the foreground, so a session
+    // left open overnight (or punched from elsewhere) shows real dates.
+    WidgetsBinding.instance.addObserver(this);
     // Live clock, updates every second.
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
@@ -49,7 +51,17 @@ class _TimePageState extends State<TimePage> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Returning to the app (from home screen or another app): the clock
+    // tick already updated _now, so just pull the latest records.
+    if (state == AppLifecycleState.resumed) {
+      loadAttendance();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _clockTimer?.cancel();
     super.dispose();
   }
@@ -79,14 +91,13 @@ class _TimePageState extends State<TimePage> {
       print('Attendance Status code: ${response.statusCode}');
       print('Attendance Response body: ${response.body}');
 
-      final data = _decodeJson(response.body);
+      final data = ApiClient.decodeJson(response);
       if (!mounted) return;
       if (data.isEmpty) {
-        // The server answered with an HTML error page instead of JSON.
+        // Unexpected response shape (not the API's JSON object).
         setState(() => _isLoading = false);
         showMessage(
-          'Server error: could not read the attendance table. '
-          'Run the queries in api/setup.sql in phpMyAdmin, then try again.',
+          'Unexpected server response. Please try again in a moment.',
         );
         return;
       }
@@ -140,12 +151,11 @@ class _TimePageState extends State<TimePage> {
       print('Punch Status code: ${response.statusCode}');
       print('Punch Response body: ${response.body}');
 
-      final data = _decodeJson(response.body);
+      final data = ApiClient.decodeJson(response);
       if (data.isEmpty) {
         return <String, dynamic>{
           'success': false,
-          'message': 'Server error: could not save the punch. '
-              'Run the queries in api/setup.sql in phpMyAdmin, then try again.',
+          'message': 'Unexpected server response. Please try again.',
         };
       }
 
@@ -156,7 +166,16 @@ class _TimePageState extends State<TimePage> {
       return data;
     } catch (e) {
       print('PUNCH ERROR: $e');
-      return null;
+      // Surface the reason (challenge page, timeout, decode failure) so
+      // the sheet's snackbar explains what actually happened.
+      final String message = e is TimeoutException
+          ? 'The server took too long to respond. Check your '
+              'connection and try again.'
+          : e.toString();
+      return <String, dynamic>{
+        'success': false,
+        'message': message,
+      };
     }
   }
 
@@ -171,19 +190,6 @@ class _TimePageState extends State<TimePage> {
           duration: const Duration(seconds: 3),
         ),
       );
-  }
-
-  /// Decodes the JSON body, returning an empty map when the server answered
-  /// with something else (like an HTML error page), so the app can show a
-  /// friendly message instead of a FormatException.
-  Map<String, dynamic> _decodeJson(String body) {
-    try {
-      final Object? decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) return decoded;
-    } catch (_) {
-      // Not JSON — handled by the caller.
-    }
-    return {};
   }
 
   /// Requests location permission and returns the current position,
@@ -242,6 +248,12 @@ class _TimePageState extends State<TimePage> {
 
   /// Opens the half-screen time in/out sheet over the map.
   Future<void> _openPunchSheet() async {
+    // Re-fetch first so the sheet shows the real current state (a session
+    // punched since the page was opened, or today's date after reopening
+    // the app the next day) instead of the snapshot from page load.
+    await loadAttendance();
+    if (!mounted) return;
+
     final bool? punched = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -249,7 +261,6 @@ class _TimePageState extends State<TimePage> {
       builder: (sheetContext) => PunchSheet(
         isTimedIn: isTimedIn,
         currentTimeIn: currentTimeIn,
-        lastRecord: records.isNotEmpty ? records.first : null,
         onPunch: performPunch,
         onMessage: showMessage,
         formatDate: _formatDate,
@@ -264,21 +275,6 @@ class _TimePageState extends State<TimePage> {
     }
   }
 
-  String _formatTime(String? dateTimeString) {
-    if (dateTimeString == null || dateTimeString.isEmpty) return '--:--';
-    final DateTime? parsed = DateTime.tryParse(dateTimeString);
-    if (parsed == null) return dateTimeString;
-    return '${_hour12(parsed.hour)}:${_twoDigits(parsed.minute)} ${_ampm(parsed.hour)}';
-  }
-
-  /// Converts a 24-hour value to 12-hour format (12 for 0 and 12).
-  String _hour12(int hour) {
-    final int h = hour % 12;
-    return _twoDigits(h == 0 ? 12 : h);
-  }
-
-  String _ampm(int hour) => hour < 12 ? 'AM' : 'PM';
-
   String _formatDate(String? dateTimeString) {
     if (dateTimeString == null || dateTimeString.isEmpty) return '';
     final DateTime? parsed = DateTime.tryParse(dateTimeString);
@@ -288,15 +284,6 @@ class _TimePageState extends State<TimePage> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return '${months[parsed.month - 1]} ${parsed.day}, ${parsed.year}';
-  }
-
-  String _formatDateRange(Map<String, dynamic> record) {
-    final String inDate = _formatDate(record['time_in']?.toString());
-    final String outDate = _formatDate(record['time_out']?.toString());
-    if (outDate.isNotEmpty && outDate != inDate) {
-      return '$inDate - $outDate';
-    }
-    return inDate;
   }
 
   String _formatDuration(Map<String, dynamic> record) {
@@ -376,7 +363,9 @@ class _TimePageState extends State<TimePage> {
   }
 
 
-  /// Opens the attendance history in a bottom sheet.
+  /// Opens the attendance history in a bottom sheet. The whole sheet —
+  /// summary and the time in/out card list — follows the Day / Weekly /
+  /// Monthly period picked inside `AttendanceHistorySheet`.
   void _openHistorySheet() {
     showModalBottomSheet<void>(
       context: context,
@@ -384,42 +373,7 @@ class _TimePageState extends State<TimePage> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
       ),
-      builder: (context) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.6,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Attendance History',
-                  style: KtextStyle.titleTealText,
-                ),
-              ),
-              const Divider(height: 1.0),
-              Expanded(
-                child: records.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'No attendance records yet.',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: records.length,
-                        itemBuilder: (context, index) => AttendanceRecordTile(
-                          record: records[index],
-                          formatTime: _formatTime,
-                          formatDateRange: _formatDateRange,
-                          formatDuration: _formatDuration,
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (context) => AttendanceHistorySheet(records: records),
     );
   }
 

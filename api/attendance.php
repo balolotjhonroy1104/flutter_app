@@ -18,8 +18,17 @@ $conn = db_connect();
 
 // Makes sure the attendance table and its location columns exist, so the
 // app works even if the statements in api/setup.sql were not run yet.
-// (Normally you would run api/setup.sql once instead of relying on this.)
+//
+// Fast path: one tiny SELECT verifies the table AND its columns in a single
+// query; the CREATE/ALTER DDL only runs when something is actually missing
+// (important on free hosts, where per-request DDL invites gateway timeouts).
 function ensure_attendance_table(mysqli $conn): void {
+    $probe = @$conn->query('SELECT id, time_in_lat, time_in_lng FROM attendance LIMIT 1');
+    if ($probe !== false) {
+        $probe->free();
+        return; // Table and columns are all present.
+    }
+
     $conn->query(
         'CREATE TABLE IF NOT EXISTS attendance (
             id INT AUTO_INCREMENT PRIMARY KEY,

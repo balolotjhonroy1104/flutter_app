@@ -38,6 +38,11 @@ function db_connect() {
 
         $conn->set_charset('utf8mb4');
 
+        // Use Philippine time (UTC+8) for NOW() and every DATETIME the
+        // server returns, so punches match the user's wall clock on any
+        // host (InfinityFree servers run on UTC, 8 hours behind).
+        $conn->query("SET time_zone = '+08:00'");
+
         return $conn;
 
     } catch (mysqli_sql_exception $e) {

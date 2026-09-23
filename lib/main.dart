@@ -27,7 +27,9 @@ class _MyAppState extends State<MyApp> {
   void initThemeMode()async{
     final SharedPreferences prefs = await  SharedPreferences.getInstance();
     final bool? repeat = prefs.getBool(KConstants.themeModeKey);
-    isDarkModeNotifier.value = repeat ?? false ;
+    // Default to dark (black background) on a fresh install: the user only
+    // gets light mode after toggling it in the home page's sun/moon icon.
+    isDarkModeNotifier.value = repeat ?? true ;
   }
   @override
   Widget build(BuildContext context) {
@@ -43,6 +45,10 @@ class _MyAppState extends State<MyApp> {
               ? Brightness.dark 
               : Brightness.light,
             ),
+            // True black background in dark mode (the fresh-install
+            // default) instead of the seed's dark grey surface.
+            scaffoldBackgroundColor:
+                isDarkMode ? Colors.black : null,
           ),
           home: WelcomePage(),
         );

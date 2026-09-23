@@ -14,14 +14,11 @@ class PunchSheet extends StatefulWidget {
     required this.onMessage,
     required this.formatDate,
     required this.formatDuration,
-    this.lastRecord,
   });
 
   final bool isTimedIn;
+  /// The open session's time-in timestamp (set when isTimedIn is true).
   final String? currentTimeIn;
-
-  /// The most recent record, shown when no session is currently open.
-  final Map<String, dynamic>? lastRecord;
 
   /// Performs the punch and returns the server response (null = no connection).
   final Future<Map<String, dynamic>?> Function({required bool timeIn}) onPunch;
@@ -89,16 +86,26 @@ class _PunchSheetState extends State<PunchSheet> {
     }
   }
 
-  /// Builds the info rows shown in the sheet: date, time in, time out and
-  /// session duration. Uses the open session when timed in, otherwise the
-  /// most recent record.
+  /// Builds the info rows shown in the sheet.
+  ///
+  /// Time In sheet: only today's date — the user is about to punch in, so
+  /// the time in/out and duration rows are hidden.
+  /// Time Out sheet: the open session's date, time in, time out (Ongoing)
+  /// and the running duration.
   List<Widget> _infoRows() {
-    final Map<String, dynamic>? source = widget.isTimedIn
-        ? <String, dynamic>{'time_in': widget.currentTimeIn}
-        : widget.lastRecord;
+    if (!widget.isTimedIn) {
+      return [
+        _infoRow(Icons.calendar_today, 'Date',
+            widget.formatDate(_now.toIso8601String())),
+      ];
+    }
 
-    if (source == null || source['time_in'] == null) {
-      // No attendance data yet: show today's date with empty values.
+    // Time Out sheet: full details of the open session.
+    final Map<String, dynamic> source =
+        <String, dynamic>{'time_in': widget.currentTimeIn};
+
+    if (source['time_in'] == null) {
+      // Defensive: session flagged open but no timestamp came through.
       return [
         _infoRow(Icons.calendar_today, 'Date',
             widget.formatDate(_now.toIso8601String())),
@@ -108,17 +115,22 @@ class _PunchSheetState extends State<PunchSheet> {
       ];
     }
 
-    final String outValue = source['time_out'] != null
-        ? _formatSheetTime(source['time_out']?.toString())
-        : (widget.isTimedIn ? 'Ongoing' : '--:--');
     final String duration = widget.formatDuration(source);
 
+    // Date: show a range when the session spans midnight (timed in
+    // yesterday, still ongoing today).
+    final String inDate = widget.formatDate(source['time_in']?.toString());
+    String dateValue = inDate;
+    final String today = widget.formatDate(_now.toIso8601String());
+    if (today.isNotEmpty && today != inDate) {
+      dateValue = '$inDate - $today';
+    }
+
     return [
-      _infoRow(Icons.calendar_today, 'Date',
-          widget.formatDate(source['time_in']?.toString())),
+      _infoRow(Icons.calendar_today, 'Date', dateValue),
       _infoRow(Icons.login, 'Time in',
           _formatSheetTime(source['time_in']?.toString())),
-      _infoRow(Icons.logout, 'Time out', outValue),
+      _infoRow(Icons.logout, 'Time out', 'Ongoing'),
       _infoRow(Icons.timer, 'Duration', duration.isEmpty ? '--' : duration),
     ];
   }

@@ -34,6 +34,10 @@ class ApiClient {
   static String? _testCookie;
 
   /// POST with browser-like headers and automatic challenge solving.
+  ///
+  /// The security check is retried up to 3 times: the cached `__test` cookie
+  /// can expire while the app is open (or the first solve can race the
+  /// server), and a single solve-then-retry is not always enough.
   static Future<http.Response> post(
     Uri url, {
     Map<String, String>? headers,
@@ -45,17 +49,27 @@ class ApiClient {
       body: body,
     );
 
-    // Security-check page? Solve it, cache the cookie, retry once.
-    if (_isChallenge(response.body)) {
-      final String? cookie = await _solveChallenge(response.body);
-      if (cookie != null) {
+    // Two transient failure modes recover here instead of surfacing HTML
+    // to the caller:
+    // 1. The security check re-fires when the cached `__test` cookie goes
+    //    stale — solve it and retry.
+    // 2. Free hosts intermittently answer with 502/503/504 gateway pages
+    //    under load — wait a beat and try again.
+    for (int attempt = 0; attempt < 4; attempt++) {
+      if (_isChallenge(response.body)) {
+        final String? cookie = await _solveChallenge(response.body);
+        if (cookie == null) break; // Unparseable challenge; give up honestly.
         _testCookie = cookie;
-        response = await _client.post(
-          url,
-          headers: _withCookie(headers),
-          body: body,
-        );
+      } else if (response.statusCode < 500) {
+        break; // Definitive answer (success or a real API-level error).
       }
+      // Challenge solved or server error: back off briefly, then retry.
+      await Future<void>.delayed(Duration(milliseconds: 600 * (attempt + 1)));
+      response = await _client.post(
+        url,
+        headers: _withCookie(headers),
+        body: body,
+      );
     }
 
     return response;
